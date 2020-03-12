@@ -2,7 +2,7 @@
   "name": "www-server",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "bin",
   "scripts": {
     "dev": "nodemon bin"
   },
