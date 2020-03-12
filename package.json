@@ -1,0 +1,23 @@
+{
+  "name": "www-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon bin"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "koa": "^2.11.0",
+    "koa-favicon": "^2.1.0",
+    "koa-router": "^8.0.8",
+    "koa2-cors": "^2.0.6",
+    "socket.io": "^2.3.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.8.7",
+    "@babel/plugin-proposal-decorators": "^7.8.3",
+    "@babel/register": "^7.8.6"
+  }
+}

@@ -1,0 +1,5 @@
+require('@babel/register')
+
+global.__base = __dirname + '/'
+
+require('./index')
