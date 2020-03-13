@@ -1,28 +1,91 @@
-module.exports = (io, socket) => {
-  socket.on('message', (data) => {
-    const { room, payload } = data
-    socket.to(room).emit('message', room, payload)
-  })
+module.exports = (io) => {
+  const db = new Map()
 
-  socket.on('join', (room) => {
-    socket.join(room)
-    const curtRoom = io.sockets.adapter.rooms[room] || {}
-    const users = Object.keys(curtRoom.sockets).length
-    if (users < 3) {
-      socket.emit('joined', room, socket.id)
-      if (users > 1) {
-        socket.to(room).emit('otherjoin', room)
+  function findTargetSocket (socketId) {
+    for (let key in io.sockets.sockets) {
+      const targetSocket = io.sockets.sockets[key]
+      if (targetSocket.id == socketId) {
+        return targetSocket
       }
-    } else {
-      socket.leave(room)
-      socket.emit('full', room, socket.id)
     }
+    return null
+  }
+
+  io.on('connection', (socket) => {
+    socket.on('disconnect', () => {
+      if (db.has(socket.id)) {
+        const data = db.get(socket.id)
+        socket.to(data.room).emit('peer-leave', data)
+        db.delete(socket.id)
+      }
+    })
+
+    socket.on('message', (data) => {
+      const { to } = data
+      const targetSocket = findTargetSocket(to)
+      if (targetSocket) {
+        targetSocket.emit('message', data)
+      }
+    })
+
+    socket.on('join', (room, uid) => {
+      const clientRooms = io.sockets.adapter.rooms[room]
+      const clientLen = clientRooms ? Object.keys(clientRooms).length : 0
+
+      if (db.has(socket.id)) {
+        socket.emit('hasjoin', db.get(socket.id))
+        return
+      }
+
+      for (let [key, value] of db) {
+        if (value.uid === uid) {
+          const targetSocket = findTargetSocket(key)
+          if (targetSocket) {
+            targetSocket.leave(room)
+            targetSocket.emit('kick', 'joined on other device')
+            db.delete(key)
+            break
+          }
+        }
+      }
+
+      socket.join(room)
+
+      const data = {
+        uid,
+        room,
+        socket: socket.id
+      }
+
+      db.set(socket.id, data)
+
+
+
+      if (clientLen == 0) {
+        socket.emit('create', data)
+      } else {
+        const users = Object.keys(io.sockets.adapter.rooms[room].sockets)
+        socket.to(room).emit('peer-online',  { ...data, users })
+      }
+
+      const users = Object.keys(io.sockets.adapter.rooms[room].sockets).filter( _ => _ != socket.id)
+
+      socket.emit('joined', { ...data, users })
+    })
+
+    socket.on('live', (room ,user) => {
+      socket.live(room)
+
+      socket.to(room).emit('peer-leave', db.get(socket.id))
+
+      db.delete(socket.id)
+
+      socket.emit('leaved', {
+        id: socket.id,
+        room,
+        channel
+      })
+    })
   })
 
-  socket.on('live', (room) => {
-    // const curtRoom = io.sockets.adapter.rooms[room] || {}
-    // const users = Object.keys(curtRoom.sockets).length
-    socket.to(room).emit('bye', room, socket.id)
-    socket.emit('leaved', room, socket.id)
-  })
 }

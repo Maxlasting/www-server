@@ -10,9 +10,7 @@ const { join } = require('path')
 
 config.modules.map(m => join(__dirname, 'modules', m)).forEach(_ => require(_)(app))
 
-io.on('connection', (socket) => {
-  config.sockets.map(s => join(__dirname, 'sockets', s)).forEach(_ => require(_)(io, socket))
-})
+config.sockets.map(s => join(__dirname, 'sockets', s)).forEach(_ => require(_)(io))
 
 server.listen(config.port, config.host, () => {
   console.log(`Server is running successfull at port: %d`, config.port)
