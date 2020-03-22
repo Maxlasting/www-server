@@ -1,17 +1,31 @@
-const { app, router, io, server } = require(__base + 'app')
+module.exports = async () => {
+  const config = require(__base + 'config')
 
-const config = require(__base + 'config')
+  const redisInit = require(__base + 'redis')
 
-const { createRouterInit } = require(__base + 'decorators')
+  const redis = await redisInit(config.redis)
 
-createRouterInit(app, router, config.routes)
+  console.log(`redis is connected`)
 
-const { join } = require('path')
+  const { app, router, io, server } = require(__base + 'app')
 
-config.modules.map(m => join(__dirname, 'modules', m)).forEach(_ => require(_)(app))
+  app.use(async (ctx, next) => {
+    ctx.redis = redis
+    await next()
+  })
 
-config.sockets.map(s => join(__dirname, 'sockets', s)).forEach(_ => require(_)(io))
+  const { createRouterInit } = require(__base + 'decorators')
 
-server.listen(config.port, config.host, () => {
-  console.log(`Server is running successfull at port: %d`, config.port)
-})
+  createRouterInit(app, router, config.routes)
+
+  const { join } = require('path')
+
+  config.modules.map(m => join(__dirname, 'modules', m)).forEach(_ => require(_)(app))
+
+  require(join(__dirname, 'signal'))(io, redis)
+
+  server.listen(config.port, config.host, () => {
+    console.log(`Server is running successfull at port: %d`, config.port)
+  })
+
+}

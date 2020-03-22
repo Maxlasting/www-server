@@ -10,7 +10,6 @@ const send = require('koa-send')
 class __defaultRouter__ {
   @get('/www/*')
   async _route_01_ (ctx) {
-    console.log(ctx.path)
     await send(ctx, ctx.path)
   }
 
