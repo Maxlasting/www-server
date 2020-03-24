@@ -1,7 +1,7 @@
 module.exports = async () => {
   const config = require(__base + 'config')
 
-  const redisInit = require(__base + 'redis')
+  const redisInit = require(__base + 'cache')
 
   const redis = await redisInit(config.redis)
 
@@ -22,7 +22,7 @@ module.exports = async () => {
 
   config.modules.map(m => join(__dirname, 'modules', m)).forEach(_ => require(_)(app))
 
-  require(join(__dirname, 'signal'))(io, redis)
+  require(join(__dirname, 'signalling'))(io, redis)
 
   server.listen(config.port, config.host, () => {
     console.log(`Server is running successfull at port: %d`, config.port)
